@@ -1,0 +1,30 @@
+{
+    "name": "ajur-media/php_gdwrapper",
+    "description": "Wrapper over GD",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Karel Wintersky",
+            "email": "wombat@fontanka.ru"
+        }
+    ],
+    "config": {
+        "optimize-autoloader": true,
+        "platform-check": false
+    },
+    "require": {
+        "php": "^7.3",
+        "psr/log": "^1.1",
+        "ext-gd": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "AJUR\\Wrappers\\": "sources/"
+        }
+    },
+    "support": {
+        "source": "https://github.com/ajur-media/PHP_GDWrapper",
+        "issues": "https://github.com/ajur-media/PHP_GDWrapper/issues"
+    }
+}
