@@ -33,6 +33,10 @@ class GDWrapper implements GDWrapperInterface
      */
     public static $logger = null;
 
+    /**
+     * @var GDImageInfo
+     */
+    public static $invalid_file;
 
     public static function init(array $options = [], LoggerInterface $logger = null)
     {
@@ -60,19 +64,18 @@ class GDWrapper implements GDWrapperInterface
             ? $logger
             : new NullLogger();
 
+        self::$invalid_file = new GDImageInfo();
+
     }
 
-    public static function cropImage(string $fn_source, string $fn_target, array $xy_source, array $wh_dest, array $wh_source, $quality = null):bool
+    public static function cropImage(string $fn_source, string $fn_target, array $xy_source, array $wh_dest, array $wh_source, $quality = null):GDImageInfo
     {
         if (!is_readable($fn_source)) {
             self::$logger->error("Static method " . __METHOD__ . " wants missing file", [$fn_source]);
-            return false;
-            // return new GDImageInfo();
+            return self::$invalid_file;
         }
 
-        list($width, $height, $type) = getimagesize($fn_source);
-        list($image_source, $extension) = self::createImageFromFile($fn_source);
-        // list($image_source, $image_info) = self::createImageFromFile($fn_source);
+        list($image_source, $image_info) = self::createImageFromFile($fn_source);
 
         if ($image_source) {
             $image_destination = imagecreatetruecolor($wh_dest[0], $wh_dest[1]);
@@ -89,56 +92,90 @@ class GDWrapper implements GDWrapperInterface
 
             imagedestroy($image_destination);
             imagedestroy($image_source);
-            // return $image_info_target;
-            return true;
+            return $image_info_target;
         }
 
-        self::$logger->error('Not image: ', [ $fn_source ]);
-        echo "not image {$fn_source}";
-        // return [];
-        return false;
+        self::$logger->error('Not an image: ', [ $fn_source ]);
+
+        return self::$invalid_file;
     }
 
-    public static function resizeImageAspect(string $fn_source, string $fn_target, int $maxwidth, int $maxheight, $image_quality = null):bool
+    public static function resizeImageAspect2(string $fn_source, string $fn_target, int $maxwidth, int $maxheight, $image_quality = null):GDImageInfo
+    {
+        $image_source = new GDImageInfo($fn_source);
+        $image_source->load();
+
+        if ($image_source->valid === false) {
+            self::$logger->error('Not image: ', [ $fn_source ]);
+            return $image_source;
+        }
+
+        $new_image_sizes = self::getNewSizes($image_source->width, $image_source->height, $maxwidth, $maxheight);
+        $newwidth = $new_image_sizes['width'];
+        $newheight = $new_image_sizes['height'];
+
+        // Resize
+        $image_destination = imagecreatetruecolor($newwidth, $newheight);
+        if ($image_source->extension == ".gif" || $image_source->extension == ".png") {
+            imagealphablending($image_destination, true);
+            imagefill($image_destination, 0, 0, imagecolorallocatealpha($image_destination, 0, 0, 0, 127));
+        }
+
+        imagecopyresampled($image_destination, $image_source->getImageData(), 0, 0, 0, 0, $newwidth, $newheight, $image_source->width, $image_source->height);
+
+        if ($image_source->extension == ".gif" || $image_source->extension == ".png") {
+            imagealphablending($image_destination, false);
+            imagesavealpha($image_destination, true);
+        }
+
+        $image_target = self::storeImageToFile($fn_target, $image_destination, $image_quality);
+
+        imagedestroy($image_destination);
+        $image_source->imagedestroy();
+
+        return $image_target;
+    }
+
+    public static function resizeImageAspect(string $fn_source, string $fn_target, int $maxwidth, int $maxheight, $image_quality = null):GDImageInfo
     {
         if (!is_readable($fn_source)) {
             self::$logger->error("Static method " . __METHOD__ . " wants missing file", [$fn_source]);
-            return false;
+            return new GDImageInfo($fn_source);
         }
 
-        list($width, $height, $type) = getimagesize($fn_source);
-        list($image_source, $source_extension) = self::createImageFromFile($fn_source);
+        /**
+         * @var GDImageInfo $image_info
+         */
+        list($image_source, $image_info) = self::createImageFromFile($fn_source);
 
         if ($image_source) {
-            $new_image_sizes = self::getNewSizes($width, $height, $maxwidth, $maxheight);
-
-            $newwidth = $new_image_sizes[0];
-            $newheight = $new_image_sizes[1];
+            $new_image_sizes = self::getNewSizes($image_info->width, $image_info->height, $maxwidth, $maxheight);
+            $newwidth = $new_image_sizes['width'];
+            $newheight = $new_image_sizes['height'];
 
             // Resize
             $image_destination = imagecreatetruecolor($newwidth, $newheight);
-            if ($source_extension == "gif" || $source_extension == "png") {
+            if ($image_info->extension == ".gif" || $image_info->extension == ".png") {
                 imagealphablending($image_destination, true);
                 imagefill($image_destination, 0, 0, imagecolorallocatealpha($image_destination, 0, 0, 0, 127));
             }
 
-            imagecopyresampled($image_destination, $image_source, 0, 0, 0, 0, $newwidth, $newheight, $width, $height);
+            imagecopyresampled($image_destination, $image_source, 0, 0, 0, 0, $newwidth, $newheight, $image_info->width, $image_info->height);
 
-            if ($source_extension == "gif" || $source_extension == "png") {
+            if ($image_info->extension == ".gif" || $image_info->extension == ".png") {
                 imagealphablending($image_destination, false);
                 imagesavealpha($image_destination, true);
             }
 
-            self::storeImageToFile($fn_target, $image_destination, $image_quality);
+            $image_target = self::storeImageToFile($fn_target, $image_destination, $image_quality);
 
             imagedestroy($image_destination);
             imagedestroy($image_source);
-            return true;
+            return $image_target;
         }
 
         self::$logger->error('Not image: ', [ $fn_source ]);
-        echo "not image {$fn_source}";
-        return false;
+        return new GDImageInfo();
     }
 
     /**
@@ -148,43 +185,37 @@ class GDWrapper implements GDWrapperInterface
      * @param $type
      * @return array
      */
-    private static function createImageFromFile($fname)
+    private static function createImageFromFile($fname):array
     {
-        $image_info = self::getImageInfo($fname);
+        $image_info = new GDImageInfo($fname);
 
-        switch ($image_info['type']) {
+        switch ($image_info->type) {
             case IMAGETYPE_BMP: {
-                $ext = 'bmp';
                 $im = imagecreatefrombmp($fname);
                 break;
             }
             case IMAGETYPE_PNG: {
-                $ext = 'png';
                 $im = imagecreatefrompng($fname);
                 break;
             }
             case IMAGETYPE_JPEG: {
-                $ext = 'jpg';
                 $im = imagecreatefromjpeg($fname);
                 break;
             }
             case IMAGETYPE_GIF: {
-                $ext = 'gif';
                 $im = imagecreatefromgif($fname);
                 break;
             }
             case IMAGETYPE_WEBP: {
-                $ext = 'webp';
                 $im = imagecreatefromwebp($fname);
                 break;
             }
             default: {
-                $ext = '';
                 $im = false;
             }
         }
 
-        return [$im, $ext];
+        return [$im, $image_info];
     }
 
     /**
@@ -216,7 +247,10 @@ class GDWrapper implements GDWrapperInterface
                 $newwidth = $width;
             }
         }
-        return array($newwidth, $newheight);
+        return [
+            'width'     =>  $newwidth,
+            'height'    =>  $newheight
+        ];
     }
 
     /**
@@ -224,16 +258,16 @@ class GDWrapper implements GDWrapperInterface
      * @param $image_destination
      * @param $extension
      * @param null $image_quality
-     * @return array
+     * @return GDImageInfo
      */
-    public static function storeImageToFile($fn_target, $image_destination, $image_quality = null)
+    private static function storeImageToFile($fn_target, $image_destination, $image_quality = null)
     {
         $target_extension = pathinfo($fn_target, PATHINFO_EXTENSION);
 
         switch ($target_extension) {
             case 'png': {
                 $quality = is_null($image_quality) ? self::$default_png_quality : $image_quality;
-                $result = imagepng($image_destination, $fn_target, 0);
+                $result = imagepng($image_destination, $fn_target, 0); //@todo: полагаю, это временное решение
                 break;
             }
             case 'gif': {
@@ -253,64 +287,64 @@ class GDWrapper implements GDWrapperInterface
         }
 
         if ($result) {
-            return self::getImageInfo($fn_target);
+            return new GDImageInfo($fn_target);
         }
 
-        return [];
+        return new GDImageInfo('', "Can't store image file {$fn_target}");
     }
 
-    public static function resizePictureAspect(string $fn_source, string $fn_target, int $maxwidth, int $maxheight, $image_quality = null):bool
+    public static function resizePictureAspect(string $fn_source, string $fn_target, int $maxwidth, int $maxheight, $image_quality = null):GDImageInfo
     {
+        /**
+         * @var GDImageInfo $image_info
+         */
         if (!is_readable($fn_source)) {
             self::$logger->error("Static method " . __METHOD__ . " wants missing file", [$fn_source]);
-            return false;
+            // return self::$invalid_file;
+            return new GDImageInfo($fn_source);
         }
 
-        list($width, $height, $type) = getimagesize($fn_source);
-
-        list($image_source, $extension) = self::createImageFromFile($fn_source);
+        list($image_source, $image_info) = self::createImageFromFile($fn_source);
 
         if ($image_source) {
 
             // horizontal image
-            if ($width > $maxwidth) {
+            if ($image_info->width > $maxwidth) {
                 $newwidth = $maxwidth;
-                $newheight = ((float)$maxwidth / (float)$width) * $height;
+                $newheight = ((float)$maxwidth / (float)$image_info->width) * $image_info->height;
             } else {
-                $newwidth = $width;
-                $newheight = $height;
+                $newwidth = $image_info->width;
+                $newheight = $image_info->height;
             }
 
             // Resize
             $image_destination = imagecreatetruecolor($newwidth, $newheight);
 
-            if ($extension == "gif" or $extension == "png") {
+            if ($image_info->extension == ".gif" || $image_info->extension == ".png") {
                 imagealphablending($image_destination, true);
                 imagealphablending($image_source, true);
                 imagefill($image_destination, 0, 0, imagecolorallocatealpha($image_destination, 0, 0, 0, 127));
             }
 
-            imagecopyresampled($image_destination, $image_source, 0, 0, 0, 0, $newwidth, $newheight, $width, $height);
+            imagecopyresampled($image_destination, $image_source, 0, 0, 0, 0, $newwidth, $newheight, $image_info->width, $image_info->height);
 
-            if ($extension == "gif" or $extension == "png") {
+            if ($image_info->extension == ".gif" || $image_info->extension == ".png") {
                 imagealphablending($image_destination, false);
                 imagecolortransparent($image_destination, imagecolorat($image_destination, 0, 0));
                 imagesavealpha($image_destination, true);
             }
 
-            self::storeImageToFile($fn_target, $image_destination, $image_quality);
-
-            return true;
+            return self::storeImageToFile($fn_target, $image_destination, $image_quality);
         }
 
-        return false;
+        return self::$invalid_file;
     }
 
-    public static function verticalimage(string $fn_source, string $fn_target, int $maxwidth, int $maxheight, $image_quality = null):bool
+    public static function verticalimage(string $fn_source, string $fn_target, int $maxwidth, int $maxheight, $image_quality = null):GDImageInfo
     {
         if (!is_readable($fn_source)) {
             self::$logger->error("Static method " . __METHOD__ . " wants missing file", [$fn_source]);
-            return false;
+            return new GDImageInfo();
         }
 
         list($width, $height, $type) = getimagesize($fn_source);
