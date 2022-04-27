@@ -7,13 +7,18 @@ use Psr\Log\LoggerInterface;
 interface GDWrapperInterface
 {
     const DEFAULT_JPEG_QUALITY = 92;
-
     const DEFAULT_WEBP_QUALITY = 80;
+    /**
+     * @var DEFAULT_PNG_QUALITY 0 is no compression
+     */
+    const DEFAULT_PNG_QUALITY = 0;
 
     const WM_POSITION_LEFT_TOP = 1;
     const WM_POSITION_RIGHT_TOP = 2;
     const WM_POSITION_RIGHT_BOTTOM = 3;
     const WM_POSITION_LEFT_BOTTOM = 4;
+
+    const EXT_BMP = "bmp";
 
     /**
      * @param array $options
@@ -36,7 +41,7 @@ interface GDWrapperInterface
      * @param null $quality
      * @return bool
      */
-    public static function cropImage(string $fn_source, string $fn_target, array $xy_source, array $wh_dest, array $wh_source, $quality = null): bool;
+    public static function cropImage(string $fn_source, string $fn_target, array $xy_source, array $wh_dest, array $wh_source, $quality = null):bool;
 
     /**
      * вписывает изображение в указанные размеры
@@ -48,6 +53,7 @@ interface GDWrapperInterface
      * @param int $maxwidth
      * @param int $maxheight
      * @param null $image_quality
+     * @param null $target_extension
      * @return bool
      */
     public static function resizeImageAspect(string $fn_source, string $fn_target, int $maxwidth, int $maxheight, $image_quality = null):bool;
