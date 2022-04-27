@@ -233,7 +233,7 @@ class GDWrapper implements GDWrapperInterface
         switch ($target_extension) {
             case 'png': {
                 $quality = is_null($image_quality) ? self::$default_png_quality : $image_quality;
-                $result = imagepng($image_destination, $fn_target, $quality);
+                $result = imagepng($image_destination, $fn_target, 0);
                 break;
             }
             case 'gif': {
