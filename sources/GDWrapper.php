@@ -100,6 +100,43 @@ class GDWrapper implements GDWrapperInterface
         return self::$invalid_file;
     }
 
+    public static function resizeImageAspect3(string $fn_source, string $fn_target, int $maxwidth, int $maxheight, $image_quality = null):GDImageInfo
+    {
+        $source = new GDImageInfo($fn_source);
+        $target = new GDImageInfo($fn_target);
+
+        $source->load();
+
+        if ($source->valid === false) {
+            self::$logger->error('Not image: ', [ $fn_source ]);
+            return $source;
+        }
+
+        $new_size = self::getNewSizes($source->width, $source->height, $maxwidth, $maxheight);
+        // Resize
+        $target->data = imagecreatetruecolor($new_size['width'], $new_size['height']);
+
+        if ($source->extension == ".gif" || $source->extension == ".png") {
+            imagealphablending($target->data, true);
+            imagefill($target->data, 0, 0, imagecolorallocatealpha($target->data, 0, 0, 0, 127));
+        }
+
+        imagecopyresampled($target->data, $source->getImageData(), 0, 0, 0, 0, $new_size['width'], $new_size['height'], $source->width, $source->height);
+
+        if ($source->extension == ".gif" || $source->extension == ".png") {
+            imagealphablending($target->data, false);
+            imagesavealpha($target->data, true);
+        }
+
+        $target->setCompressionQuality($image_quality);
+        $target->store();
+
+        $source->imagedestroy();
+        $target->imagedestroy();
+
+        return $target;
+    }
+
     public static function resizeImageAspect2(string $fn_source, string $fn_target, int $maxwidth, int $maxheight, $image_quality = null):GDImageInfo
     {
         $image_source = new GDImageInfo($fn_source);

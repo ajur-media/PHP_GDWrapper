@@ -5,30 +5,41 @@ namespace AJUR\Wrappers;
 class GDImageInfo implements GDImageInfoInterface
 {
     public $valid = false;
+    public $error_message = '';
 
     public $width = 0;
     public $height = 0;
     public $type = 0;
-    public $attr = '';
-    public $mime = '';
-    public $extension = '';
 
-    public $error_message = '';
+    /**
+     * @var string
+     */
+    public $mime = '';
+
+    /**
+     * @var string
+     */
+    public $mime_extension;
 
     /**
      * @var string
      */
     public $filename;
 
+    public $extension = '';
+
+
+
+    /**
+     * Целевая степень сжатия
+     * @var int|null
+     */
+    public $quality = null;
+
     /**
      * @var false|resource
      */
     public $data;
-
-    /**
-     * @var string
-     */
-    public $f_ext;
 
     public function __construct($filename = '', $error_message = '')
     {
@@ -37,43 +48,44 @@ class GDImageInfo implements GDImageInfoInterface
             return;
         }
 
-        if (!is_file($filename)) {
-            $this->error_message = "{$filename} is not a file";
-
-            if (!is_readable($filename)) {
-                $this->error_message = "{$filename} is unreadable";
-            }
-
-            return;
-        }
-
-        $this->update($filename);
+        $this->filename = $filename;
+        $this->extension = pathinfo($this->filename, PATHINFO_EXTENSION);
     }
 
     /**
      * Обновляет информацию, используя данные файла
      */
-    public function update($filename)
+    public function getFileInfo()
     {
-        $image_info = getimagesize($filename);
+        $image_info = getimagesize($this->filename);
+
         if ($image_info !== false) {
             $this->valid = true;
 
             $this->width = $image_info[0];
             $this->height = $image_info[1];
             $this->type = $image_info[2];
-            $this->attr = $image_info[3];
+            // $this->attr = $image_info[3];
             $this->mime = image_type_to_mime_type($this->type);
-            $this->extension = image_type_to_extension($this->type);          // расширение на основе MIME-типа
-            $this->f_ext = pathinfo($filename, PATHINFO_EXTENSION);      // расширение на основе имени
-
-            $this->filename = $filename;
+            $this->mime_extension = image_type_to_extension($this->type);          // расширение на основе MIME-типа
         }
     }
 
     public function load()
     {
         $this->valid = true;
+
+        if (!is_file($this->filename)) {
+            $this->error_message = "{$this->filename} is not a file";
+
+            if (!is_readable($this->filename)) {
+                $this->error_message = "{$this->filename} is unreadable";
+            }
+
+            return $this;
+        }
+
+        $this->getFileInfo();
 
         switch ($this->type) {
             case IMAGETYPE_BMP: {
@@ -109,11 +121,16 @@ class GDImageInfo implements GDImageInfoInterface
         }
 
         $this->data = $im;
+
+        return $this;
     }
 
     public function imagedestroy()
     {
         imagedestroy($this->data);
+        $this->data = null;
+
+        return $this;
     }
 
     /**
@@ -123,6 +140,7 @@ class GDImageInfo implements GDImageInfoInterface
     public function setError($message):GDImageInfo
     {
         $this->error_message = $message;
+
         return $this;
     }
 
@@ -130,5 +148,53 @@ class GDImageInfo implements GDImageInfoInterface
     {
         return $this->data;
     }
+
+    /**
+     * Устанавливает целевую степень сжатия
+     * @param $image_quality
+     */
+    public function setCompressionQuality($image_quality = null)
+    {
+        $this->quality = $image_quality;
+    }
+
+    /**
+     * Сохраняет файл
+     */
+    public function store()
+    {
+        $target_extension = pathinfo($this->filename, PATHINFO_EXTENSION);
+
+        switch ($target_extension) {
+            case 'png': {
+                $this->quality = 100;
+                $this->valid = imagepng($this->data, $this->filename, 0); //@todo: полагаю, это временное решение, и должно быть ( (100 - $quality) / 10) с округлением вниз
+                break;
+            }
+            case 'gif': {
+                $this->valid = imagegif($this->data, $this->filename);
+                break;
+            }
+            case 'webp': {
+                $this->quality = is_null($this->quality) ? GDWrapper::$default_webp_quality : $this->quality;
+                $this->valid = imagewebp($this->data, $this->filename, $this->quality);
+                break;
+            }
+            default: { /* jpg, jpeg or any other */
+                $this->quality = is_null($this->quality) ? GDWrapper::$default_jpeg_quality : $this->quality;
+                $this->valid = imagejpeg($this->data, $this->filename, $this->quality);
+                break;
+            }
+        }
+
+        if ($this->valid === false) {
+            $this->error_message = "Can't store image file {$this->filename}";
+        }
+
+        $this->getFileInfo();
+
+        return $this;
+    }
+
 
 }
