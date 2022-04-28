@@ -370,7 +370,7 @@ class GDWrapper implements GDWrapperInterface
             $target = new GDImageInfo($fn_target);
             $target->data = $source->data;
         } else {
-            $target = new GDImageInfo($fn_source);
+            $target = $source;
         }
 
         $watermark = new GDImageInfo($params['watermark']);

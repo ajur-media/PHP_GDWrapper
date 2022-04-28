@@ -129,7 +129,7 @@ class GDImageInfo implements GDImageInfoInterface
 
     public function destroyImage()
     {
-        if (get_resource_type($this->data) === 'gd') {
+        if ($this->data !== null && get_resource_type($this->data) === 'gd') {
             imagedestroy($this->data);
         }
 
