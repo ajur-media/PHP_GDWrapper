@@ -127,9 +127,12 @@ class GDImageInfo implements GDImageInfoInterface
         return $this;
     }
 
-    public function imagedestroy($l = 0)
+    public function destroy()
     {
-        imagedestroy($this->data); if ($l != 0) { var_dump($l); }
+        if (get_resource_type($this->data) === 'gd') {
+            imagedestroy($this->data);
+        }
+
         $this->data = null;
 
         return $this;
@@ -163,7 +166,7 @@ class GDImageInfo implements GDImageInfoInterface
     /**
      * Сохраняет файл (все-таки удобнее иметь quality аргументом)
      */
-    public function store($quality = null)
+    public function store($quality = null): GDImageInfo
     {
         $target_extension = pathinfo($this->filename, PATHINFO_EXTENSION);
 
@@ -201,6 +204,5 @@ class GDImageInfo implements GDImageInfoInterface
 
         return $this;
     }
-
 
 }

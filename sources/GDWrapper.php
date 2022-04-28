@@ -92,8 +92,8 @@ class GDWrapper implements GDWrapperInterface
         $target->setCompressionQuality($quality);
         $target->store();
 
-        $source->imagedestroy();
-        $target->imagedestroy();
+        $source->destroy();
+        $target->destroy();
 
         return $target;
     }
@@ -129,8 +129,8 @@ class GDWrapper implements GDWrapperInterface
         $target->setCompressionQuality($image_quality);
         $target->store();
 
-        $source->imagedestroy();
-        $target->imagedestroy();
+        $source->destroy();
+        $target->destroy();
 
         return $target;
     }
@@ -174,8 +174,8 @@ class GDWrapper implements GDWrapperInterface
 
         $target->store($image_quality);
 
-        $target->imagedestroy();
-        $source->imagedestroy();
+        $target->destroy();
+        $source->destroy();
 
         return $target;
     }
@@ -214,8 +214,8 @@ class GDWrapper implements GDWrapperInterface
         $target->setCompressionQuality($image_quality);
         $target->store();
 
-        $source->imagedestroy();
-        $target->imagedestroy();
+        $source->destroy();
+        $target->destroy();
 
         return $target;
     }
@@ -305,8 +305,8 @@ class GDWrapper implements GDWrapperInterface
         $target->setCompressionQuality($image_quality);
         $target->store();
 
-        $source->imagedestroy();
-        $target->imagedestroy();
+        $source->destroy();
+        $target->destroy();
         imagedestroy($im_res);
 
         return $target;
@@ -330,6 +330,13 @@ class GDWrapper implements GDWrapperInterface
         if ($source->valid === false) {
             self::$logger->error($source->error_message, [ $fn_source ]);
             return $source;
+        }
+
+        if (!empty($fn_target)) {
+            $target = new GDImageInfo($fn_target);
+            $target->data = $source->data;
+        } else {
+            $target = new GDImageInfo($fn_source);
         }
 
         $watermark = new GDImageInfo($params['watermark']);
@@ -366,37 +373,17 @@ class GDWrapper implements GDWrapperInterface
 
         imagealphablending($source->data, true);
         imagealphablending($watermark->data, true);
-        imagecopy($source->data, $watermark->data, $ns_x, $ns_y, 0, 0, $watermark->width, $watermark->height);
+        imagecopy($target->data, $watermark->data, $ns_x, $ns_y, 0, 0, $watermark->width, $watermark->height);
 
-        $watermark->imagedestroy();
+        $watermark->destroy();
 
-        if (!empty($fn_target)) {
-            $target = clone $source;
-            $target->filename = $fn_target;
-            $target->getFileInfo();
+        $target->setCompressionQuality($quality);
+        $target->store();
 
-            /*$target = new GDImageInfo($fn_target);
-            $target->data = $source->data;
-            $target->setCompressionQuality($quality);
-            $target->store();*/
+        $target->destroy();
+        $source->destroy();
 
-            var_dump($target);
-
-            $source->imagedestroy(__LINE__);
-
-            var_dump($target);
-
-            $target->imagedestroy(__LINE__);
-
-            return $target;
-        }
-
-        $source->setCompressionQuality($quality);
-        $source->store();
-
-        $source->imagedestroy();
-
-        return $source;
+        return $target;
     }
 
     public static function rotate2(string $fn_source, string $roll_direction = "", $quality = null, string $fn_target = ''):GDImageInfo
@@ -435,8 +422,8 @@ class GDWrapper implements GDWrapperInterface
             $target->setCompressionQuality($quality);
             $target->store();
 
-            $source->imagedestroy();
-            $target->imagedestroy();
+            $source->destroy();
+            $target->destroy();
 
             return $target;
         }
@@ -444,7 +431,7 @@ class GDWrapper implements GDWrapperInterface
         $source->setCompressionQuality($quality);
         $source->store();
 
-        $source->imagedestroy();
+        $source->destroy();
 
         return $source;
     }
