@@ -21,7 +21,10 @@
     "autoload": {
         "psr-4": {
             "AJUR\\Wrappers\\": "sources/"
-        }
+        },
+        "files": [
+            "helpers.php"
+        ]
     },
     "support": {
         "source": "https://github.com/ajur-media/PHP_GDWrapper",
