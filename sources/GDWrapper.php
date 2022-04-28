@@ -401,6 +401,13 @@ class GDWrapper implements GDWrapperInterface
             return $source;
         }
 
+        if (!empty($fn_target)) {
+            $target = new GDImageInfo($fn_target);
+            $target->data = $source->data;
+        } else {
+            $target = new GDImageInfo($fn_source);
+        }
+
         $degrees = 0;
         if ($roll_direction == "left") {
             $degrees = 90;
@@ -413,10 +420,11 @@ class GDWrapper implements GDWrapperInterface
         }
 
         if ($degrees % 360 != 0) { // остаток от деления по модулю
-            $source->data = imagerotate($source->data, $degrees, 0);
+            // $source->data = imagerotate($source->data, $degrees, 0);
+            $target->data = imagerotate($source->data, $degrees, 0);
         }
 
-        if (!empty($fn_target)) {
+        /*if (!empty($fn_target)) {
             $target = new GDImageInfo($fn_target);
             $target->data = $source->data;
             $target->setCompressionQuality($quality);
@@ -426,11 +434,17 @@ class GDWrapper implements GDWrapperInterface
             $target->destroy();
 
             return $target;
-        }
+        }*/
 
-        $source->setCompressionQuality($quality);
+        /*$source->setCompressionQuality($quality);
         $source->store();
 
+        $source->destroy();*/
+
+        $target->setCompressionQuality($quality);
+        $target->store();
+
+        $target->destroy();
         $source->destroy();
 
         return $source;
