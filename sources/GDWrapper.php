@@ -10,10 +10,6 @@ use RuntimeException;
  * Class GDWrapper
  *
  * @package "ajur-media/php_gdwrapper"
- *
- * * Использует уровни логгирования:
- * - error - ошибка: как правило, не найден файл
- *
  */
 class GDWrapper implements GDWrapperInterface
 {
@@ -81,6 +77,7 @@ class GDWrapper implements GDWrapperInterface
         }
 
         $target->data = imagecreatetruecolor($wh_dest[0], $wh_dest[1]);
+
         imagecopyresampled(
             $target->data,
             $source->data,
@@ -92,8 +89,45 @@ class GDWrapper implements GDWrapperInterface
         $target->setCompressionQuality($quality);
         $target->store();
 
-        $source->destroy();
-        $target->destroy();
+        $source->destroyImage();
+        $target->destroyImage();
+
+        return $target;
+    }
+
+    /**
+     * Создает новый файл, залитый цветом
+     *
+     * @param string $fn_target
+     * @param int $width
+     * @param int $height
+     * @param array $color массив из 4 int R+G+B+A; alpha (0 - opaque, 127 transparent), если указано меньше 4 значений, остальные считаются по умолчанию = 0
+     * @param null $quality
+     * @return GDImageInfo
+     */
+    public static function imageFillColor(string $fn_target, int $width, int $height, array $color, $quality = null):GDImageInfo
+    {
+        $target = new GDImageInfo($fn_target);
+
+        if (count($color) < 4) {
+            $color = array_merge( $color, array_fill(0, 3-count($color), 0)); // colors
+            $color[] = 0; // alpha
+        }
+
+        list($red, $green, $blue, $alpha) = $color;
+
+        if ($target->extension == 'png') {
+            imagesavealpha($target->data, true);
+        }
+
+        $color = $alpha == 0 ? imagecolorallocate($target->data, $red, $green, $blue) : imagecolorallocatealpha($target->data, $red, $green, $blue, $alpha);
+
+        $target->data = imagecreatetruecolor($width, $height);
+        imagefill($target->data, 0, 0, $color);
+
+        $target->setCompressionQuality($quality);
+        $target->store();
+        $target->destroyImage();
 
         return $target;
     }
@@ -129,8 +163,8 @@ class GDWrapper implements GDWrapperInterface
         $target->setCompressionQuality($image_quality);
         $target->store();
 
-        $source->destroy();
-        $target->destroy();
+        $source->destroyImage();
+        $target->destroyImage();
 
         return $target;
     }
@@ -174,8 +208,8 @@ class GDWrapper implements GDWrapperInterface
 
         $target->store($image_quality);
 
-        $target->destroy();
-        $source->destroy();
+        $target->destroyImage();
+        $source->destroyImage();
 
         return $target;
     }
@@ -214,8 +248,8 @@ class GDWrapper implements GDWrapperInterface
         $target->setCompressionQuality($image_quality);
         $target->store();
 
-        $source->destroy();
-        $target->destroy();
+        $source->destroyImage();
+        $target->destroyImage();
 
         return $target;
     }
@@ -305,8 +339,8 @@ class GDWrapper implements GDWrapperInterface
         $target->setCompressionQuality($image_quality);
         $target->store();
 
-        $source->destroy();
-        $target->destroy();
+        $source->destroyImage();
+        $target->destroyImage();
         imagedestroy($im_res);
 
         return $target;
@@ -375,13 +409,41 @@ class GDWrapper implements GDWrapperInterface
         imagealphablending($watermark->data, true);
         imagecopy($target->data, $watermark->data, $ns_x, $ns_y, 0, 0, $watermark->width, $watermark->height);
 
-        $watermark->destroy();
+        $watermark->destroyImage();
 
         $target->setCompressionQuality($quality);
         $target->store();
 
-        $target->destroy();
-        $source->destroy();
+        $target->destroyImage();
+        $source->destroyImage();
+
+        return $target;
+    }
+
+    public static function flip(string $fn_source, int $mode, $quality = null, string $fn_target = ''):GDImageInfo
+    {
+        $source = new GDImageInfo($fn_source);
+        $source->load();
+
+        if ($source->valid === false) {
+            self::$logger->error($source->error_message, [ $fn_source ]);
+            return $source;
+        }
+
+        if (!empty($fn_target)) {
+            $target = new GDImageInfo($fn_target);
+            $target->data = $source->data;
+        } else {
+            $target = new GDImageInfo($fn_source);
+        }
+
+        $target->data = imageflip($source->data, $mode);
+
+        $target->setCompressionQuality($quality);
+        $target->store();
+
+        $target->destroyImage();
+        $source->destroyImage();
 
         return $target;
     }
@@ -420,32 +482,14 @@ class GDWrapper implements GDWrapperInterface
         }
 
         if ($degrees % 360 != 0) { // остаток от деления по модулю
-            // $source->data = imagerotate($source->data, $degrees, 0);
             $target->data = imagerotate($source->data, $degrees, 0);
         }
-
-        /*if (!empty($fn_target)) {
-            $target = new GDImageInfo($fn_target);
-            $target->data = $source->data;
-            $target->setCompressionQuality($quality);
-            $target->store();
-
-            $source->destroy();
-            $target->destroy();
-
-            return $target;
-        }*/
-
-        /*$source->setCompressionQuality($quality);
-        $source->store();
-
-        $source->destroy();*/
 
         $target->setCompressionQuality($quality);
         $target->store();
 
-        $target->destroy();
-        $source->destroy();
+        $target->destroyImage();
+        $source->destroyImage();
 
         return $source;
     }

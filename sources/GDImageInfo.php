@@ -127,7 +127,7 @@ class GDImageInfo implements GDImageInfoInterface
         return $this;
     }
 
-    public function destroy()
+    public function destroyImage()
     {
         if (get_resource_type($this->data) === 'gd') {
             imagedestroy($this->data);
@@ -171,6 +171,10 @@ class GDImageInfo implements GDImageInfoInterface
         $target_extension = pathinfo($this->filename, PATHINFO_EXTENSION);
 
         switch ($target_extension) {
+            case 'bmp': {
+                $this->valid = imagebmp($this->data, $this->filename, (bool)$quality);
+                break;
+            }
             case 'png': {
                 $this->quality = $q = 100;
                 // $this->quality = is_null($quality) ? $this->quality : $quality;

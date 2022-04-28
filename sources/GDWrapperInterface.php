@@ -92,9 +92,10 @@ interface GDWrapperInterface
      * @param array $params
      * @param int $pos_index
      * @param null $quality
+     * @param string $fn_target = ''
      * @return GDImageInfo
      */
-    public static function addWaterMark(string $fn_source, array $params, int $pos_index, $quality = null):GDImageInfo;
+    public static function addWaterMark(string $fn_source, array $params, int $pos_index, $quality = null, string $fn_target = ''):GDImageInfo;
 
     /**
      *
@@ -102,20 +103,38 @@ interface GDWrapperInterface
      * @param string $fn_source
      * @param string $roll_direction
      * @param null $quality
+     * @param string $fn_target
      * @return GDImageInfo
      */
-    public static function rotate(string $fn_source, string $roll_direction = "", $quality = null):GDImageInfo;
+    public static function rotate(string $fn_source, $roll_direction = "", $quality = null, string $fn_target = ''):GDImageInfo;
 
     /**
      * Используется на 47news
      *
-     * = rotate2()
+     * wrapper over rotate(), legacy, used on 47news
      *
      * @param string $fn_source
      * @param string $roll_direction
      * @param null $quality
+     * @param string $fn_target
      * @return GDImageInfo
      */
-    public static function rotate2(string $fn_source, string $roll_direction = "", $quality = null):GDImageInfo ;
+    public static function rotate2(string $fn_source, string $roll_direction = "", $quality = null, string $fn_target = ''):GDImageInfo;
+
+    /**
+     * Переворачивает изображение, используя выбранный режим
+     *
+     * @param string $fn_source
+     * @param int $mode - Режим переворота - одна из констант IMG_FLIP_*:
+     *      IMG_FLIP_HORIZONTAL 	Переворачивает изображение по горизонтали.
+     *      IMG_FLIP_VERTICAL 	Переворачивает изображение по вертикали.
+     *      IMG_FLIP_BOTH 	Переворачивает изображение и по горизонтали и по вертикали.
+     * @param null $quality
+     * @param string $fn_target
+     * @return GDImageInfo
+     */
+    public static function flip(string $fn_source, int $mode, $quality = null, string $fn_target = ''):GDImageInfo;
+
+    public static function imageFillColor(string $fn_target, int $width, int $height, array $color, $quality = null):GDImageInfo;
 
 }

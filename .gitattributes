@@ -6,4 +6,4 @@
 .gitignore		    export-ignore
 tests			    export-ignore
 vendor			    export-ignore
-docs		        export-ignore
+test.php		    export-ignore
