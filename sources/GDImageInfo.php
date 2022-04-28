@@ -82,6 +82,8 @@ class GDImageInfo implements GDImageInfoInterface
                 $this->error_message = "{$this->filename} is unreadable";
             }
 
+            $this->valid = false;
+
             return $this;
         }
 
@@ -125,9 +127,9 @@ class GDImageInfo implements GDImageInfoInterface
         return $this;
     }
 
-    public function imagedestroy()
+    public function imagedestroy($l = 0)
     {
-        imagedestroy($this->data);
+        imagedestroy($this->data); if ($l != 0) { var_dump($l); }
         $this->data = null;
 
         return $this;
@@ -159,15 +161,17 @@ class GDImageInfo implements GDImageInfoInterface
     }
 
     /**
-     * Сохраняет файл
+     * Сохраняет файл (все-таки удобнее иметь quality аргументом)
      */
-    public function store()
+    public function store($quality = null)
     {
         $target_extension = pathinfo($this->filename, PATHINFO_EXTENSION);
 
         switch ($target_extension) {
             case 'png': {
-                $this->quality = 100;
+                $this->quality = $q = 100;
+                // $this->quality = is_null($quality) ? $this->quality : $quality;
+                // $q = round((100-$this->quality)/10, 0, PHP_ROUND_HALF_DOWN);
                 $this->valid = imagepng($this->data, $this->filename, 0); //@todo: полагаю, это временное решение, и должно быть ( (100 - $quality) / 10) с округлением вниз
                 break;
             }
@@ -176,11 +180,13 @@ class GDImageInfo implements GDImageInfoInterface
                 break;
             }
             case 'webp': {
+                $this->quality = is_null($quality) ? $this->quality : $quality;
                 $this->quality = is_null($this->quality) ? GDWrapper::$default_webp_quality : $this->quality;
                 $this->valid = imagewebp($this->data, $this->filename, $this->quality);
                 break;
             }
             default: { /* jpg, jpeg or any other */
+                $this->quality = is_null($quality) ? $this->quality : $quality;
                 $this->quality = is_null($this->quality) ? GDWrapper::$default_jpeg_quality : $this->quality;
                 $this->valid = imagejpeg($this->data, $this->filename, $this->quality);
                 break;
