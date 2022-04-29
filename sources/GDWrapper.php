@@ -14,10 +14,13 @@ use RuntimeException;
 class GDWrapper implements GDWrapperInterface
 {
     /**
-     * @var int
+     * @var int 1..100
      */
     public static $default_jpeg_quality = 92;
 
+    /**
+     * @var int 1..100
+     */
     public static $default_webp_quality = 80;
 
     /**
@@ -561,6 +564,18 @@ class GDWrapper implements GDWrapperInterface
     public static function toRange($value, $min, $max)
     {
         return max($min, min($value, $max));
+    }
+
+    /**
+     *
+     * @param $value
+     * @param $min
+     * @param $max
+     * @return mixed
+     */
+    public static function toRangeMin($value, $min, $max)
+    {
+        return min($min, max($value, $max));
     }
 
     /**

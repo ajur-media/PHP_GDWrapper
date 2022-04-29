@@ -44,7 +44,7 @@ class GDImageInfo implements GDImageInfoInterface
     public function __construct($filename = '', $error_message = '')
     {
         if (empty($filename)) {
-            $this->error_message = $error_message;
+            $this->setError($error_message);
             return;
         }
 
@@ -55,7 +55,7 @@ class GDImageInfo implements GDImageInfoInterface
     /**
      * Обновляет информацию, используя данные файла
      */
-    public function getFileInfo()
+    public function getFileInfo():GDImageInfo
     {
         $image_info = getimagesize($this->filename);
 
@@ -68,19 +68,26 @@ class GDImageInfo implements GDImageInfoInterface
             // $this->attr = $image_info[3];
             $this->mime = image_type_to_mime_type($this->type);
             $this->mime_extension = image_type_to_extension($this->type);          // расширение на основе MIME-типа
+        } else {
+            $this->setError("Can't get imagesize of file {$this->filename}");
         }
         return $this;
     }
 
-    public function load()
+    /**
+     * Создает GD-ресурс и загружает в него контент файла
+     *
+     * @return $this
+     */
+    public function load():GDImageInfo
     {
         $this->valid = true;
 
         if (!is_file($this->filename)) {
-            $this->error_message = "{$this->filename} is not a file";
+            $this->setError("{$this->filename} is not a file");
 
             if (!is_readable($this->filename)) {
-                $this->error_message = "{$this->filename} is unreadable";
+                $this->setError("{$this->filename} is unreadable");
             }
 
             $this->valid = false;
@@ -113,14 +120,14 @@ class GDImageInfo implements GDImageInfoInterface
             }
             default: {
                 $this->valid = false;
-                $this->error_message = "Unsupported file type {$this->type}";
+                $this->setError("Unsupported file type {$this->type}");
                 $im = false;
             }
         }
 
         if ($im === false) {
             $this->valid = false;
-            $this->error_message = "Can't create image data from {$this->filename}";
+            $this->setError("Can't create image data from {$this->filename}");
         }
 
         $this->data = $im;
@@ -128,7 +135,11 @@ class GDImageInfo implements GDImageInfoInterface
         return $this;
     }
 
-    public function destroyImage()
+    /**
+     * Уничтожает данные GD-ресурса
+     * @return $this
+     */
+    public function destroyImage():GDImageInfo
     {
         if ($this->data !== null && get_resource_type($this->data) === 'gd') {
             imagedestroy($this->data);
@@ -140,6 +151,8 @@ class GDImageInfo implements GDImageInfoInterface
     }
 
     /**
+     * Устанавливает код ошибки
+     *
      * @param $message
      * @return GDImageInfo
      */
@@ -150,6 +163,11 @@ class GDImageInfo implements GDImageInfoInterface
         return $this;
     }
 
+    /**
+     * Возвращает GD-ресурс
+     *
+     * @return false|resource
+     */
     public function getImageData()
     {
         return $this->data;
@@ -157,11 +175,28 @@ class GDImageInfo implements GDImageInfoInterface
 
     /**
      * Устанавливает целевую степень сжатия
-     * @param $image_quality
+     * @param null $image_quality
+     * @return GDImageInfo
      */
-    public function setCompressionQuality($image_quality = null)
+    public function setCompressionQuality($image_quality = null):GDImageInfo
     {
+        switch ($this->extension) {
+            case 'jpg':
+            case 'webp': {
+                $this->quality = GDWrapper::toRange($image_quality, 1, 100);
+                break;
+            }
+            case 'png': {
+                $this->quality = GDWrapper::toRangeMin($image_quality, 0, 9);
+                break;
+            }
+            default: {
+                $this->quality = $image_quality;
+            }
+        }
+
         $this->quality = $image_quality;
+        return $this;
     }
 
     /**
@@ -202,7 +237,7 @@ class GDImageInfo implements GDImageInfoInterface
         }
 
         if ($this->valid === false) {
-            $this->error_message = "Can't store image file {$this->filename}";
+            $this->setError("Can't store image file {$this->filename}");
         }
 
         $this->getFileInfo();
@@ -210,7 +245,7 @@ class GDImageInfo implements GDImageInfoInterface
         return $this;
     }
 
-    public function changeExtension($target_extension)
+    public function changeExtension($target_extension):GDImageInfo
     {
         $info = pathinfo($this->filename);
         $this->extension = $target_extension;
@@ -218,7 +253,7 @@ class GDImageInfo implements GDImageInfoInterface
             . $info['filename']
             . '.'
             . $target_extension;
-        return $this->filename;
+        return $this;
     }
 
 }
