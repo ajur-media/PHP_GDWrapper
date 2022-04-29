@@ -69,6 +69,7 @@ class GDImageInfo implements GDImageInfoInterface
             $this->mime = image_type_to_mime_type($this->type);
             $this->mime_extension = image_type_to_extension($this->type);          // расширение на основе MIME-типа
         }
+        return $this;
     }
 
     public function load()
@@ -168,7 +169,7 @@ class GDImageInfo implements GDImageInfoInterface
      */
     public function store($quality = null): GDImageInfo
     {
-        $target_extension = pathinfo($this->filename, PATHINFO_EXTENSION);
+        $target_extension = $this->extension;
 
         switch ($target_extension) {
             case 'bmp': {
@@ -207,6 +208,17 @@ class GDImageInfo implements GDImageInfoInterface
         $this->getFileInfo();
 
         return $this;
+    }
+
+    public function changeExtension($target_extension)
+    {
+        $info = pathinfo($this->filename);
+        $this->extension = $target_extension;
+        $this->filename = ($info['dirname'] ? $info['dirname'] . DIRECTORY_SEPARATOR : '')
+            . $info['filename']
+            . '.'
+            . $target_extension;
+        return $this->filename;
     }
 
 }
