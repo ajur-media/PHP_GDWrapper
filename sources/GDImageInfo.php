@@ -213,9 +213,10 @@ class GDImageInfo implements GDImageInfoInterface
             }
             case 'png': {
                 $this->quality = $q = 100;
+                // quality setting not used for PNG
                 // $this->quality = is_null($quality) ? $this->quality : $quality;
                 // $q = round((100-$this->quality)/10, 0, PHP_ROUND_HALF_DOWN);
-                $this->valid = imagepng($this->data, $this->filename, 0); //@todo: полагаю, это временное решение, и должно быть ( (100 - $quality) / 10) с округлением вниз
+                $this->valid = imagepng($this->data, $this->filename);
                 break;
             }
             case 'gif': {
