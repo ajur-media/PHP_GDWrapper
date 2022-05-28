@@ -26,9 +26,10 @@ class GDImageInfo implements GDImageInfoInterface
      */
     public $filename;
 
+    /**
+     * @var string
+     */
     public $extension = '';
-
-
 
     /**
      * Целевая степень сжатия
@@ -200,7 +201,10 @@ class GDImageInfo implements GDImageInfoInterface
     }
 
     /**
-     * Сохраняет файл (все-таки удобнее иметь quality аргументом)
+     * Сохраняет файл.
+     * Если quality не передан - используется quality из параметров класса
+     * BMP всегда сохраняются с RLE-сжатием
+     * PNG всегда сохраняются с ZLib compression default
      */
     public function store($quality = null): GDImageInfo
     {
@@ -208,11 +212,11 @@ class GDImageInfo implements GDImageInfoInterface
 
         switch ($target_extension) {
             case 'bmp': {
-                $this->valid = imagebmp($this->data, $this->filename, (bool)$quality);
+                $this->valid = imagebmp($this->data, $this->filename, true);
                 break;
             }
             case 'png': {
-                $this->quality = $q = 100;
+                // $this->quality = $q = 100;
                 // quality setting not used for PNG
                 // $this->quality = is_null($quality) ? $this->quality : $quality;
                 // $q = round((100-$this->quality)/10, 0, PHP_ROUND_HALF_DOWN);
@@ -246,6 +250,16 @@ class GDImageInfo implements GDImageInfoInterface
         return $this;
     }
 
+    /**
+     * @param string $filename
+     * @return GDImageInfo
+     */
+    public function setFilename(string $filename): GDImageInfo
+    {
+        $this->filename = $filename;
+        return $this;
+    }
+
     public function changeExtension($target_extension):GDImageInfo
     {
         $info = pathinfo($this->filename);
@@ -255,6 +269,27 @@ class GDImageInfo implements GDImageInfoInterface
             . '.'
             . $target_extension;
         return $this;
+    }
+
+    /**
+     * @param string $format
+     * @return string
+     */
+    public function getWH(string $format = "%sx%s"):string
+    {
+        if (empty($format)) {
+            return '';
+        }
+
+        return sprintf($format, $this->width, $this->height);
+    }
+
+    /**
+     * @return string
+     */
+    public function getError():string
+    {
+        return $this->error_message;
     }
 
 }

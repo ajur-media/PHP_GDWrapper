@@ -15,6 +15,10 @@ interface GDImageInfoInterface
     public function store($quality = null): GDImageInfo;
 
     public function changeExtension($target_extension):GDImageInfo;
+    public function setFilename(string $filename): GDImageInfo;
+
+    public function getWH(string $format = "%sx%s"):string;
+    public function getError():string;
 }
 
 # -eof-
