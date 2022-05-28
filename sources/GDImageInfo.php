@@ -292,4 +292,22 @@ class GDImageInfo implements GDImageInfoInterface
         return $this->error_message;
     }
 
+    /**
+     * Helper
+     * @return bool
+     */
+    public function isValid():bool
+    {
+        return $this->valid;
+    }
+
+    /**
+     * Helper
+     * @return bool
+     */
+    public function isError():bool
+    {
+        return !$this->valid;
+    }
+
 }

@@ -19,6 +19,9 @@ interface GDImageInfoInterface
 
     public function getWH(string $format = "%sx%s"):string;
     public function getError():string;
+
+    public function isValid():bool;
+    public function isError():bool;
 }
 
 # -eof-
