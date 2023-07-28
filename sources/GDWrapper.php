@@ -16,17 +16,17 @@ class GDWrapper implements GDWrapperInterface
     /**
      * @var int 1..100
      */
-    public static $default_jpeg_quality = 92;
+    public static int $default_jpeg_quality = 92;
 
     /**
      * @var int 1..100
      */
-    public static $default_webp_quality = 80;
+    public static int $default_webp_quality = 80;
 
     /**
      * @var int 0 is no compression
      */
-    public static $default_png_quality = 0;
+    public static int $default_png_quality = 0;
 
     /**
      * @var LoggerInterface $logger
@@ -36,7 +36,7 @@ class GDWrapper implements GDWrapperInterface
     /**
      * @var GDImageInfo
      */
-    public static $invalid_file;
+    public static GDImageInfo $invalid_file;
 
     public static function init(array $options = [], LoggerInterface $logger = null)
     {
@@ -186,14 +186,14 @@ class GDWrapper implements GDWrapperInterface
 
         // horizontal image
         if ($source->width > $maxwidth) {
-            $newwidth = $maxwidth;
-            $newheight = ((float)$maxwidth / (float)$source->width) * $source->height;
+            $new_width = $maxwidth;
+            $new_height = ((float)$maxwidth / (float)$source->width) * $source->height;
         } else {
-            $newwidth = $source->width;
-            $newheight = $source->height;
+            $new_width = $source->width;
+            $new_height = $source->height;
         }
 
-        $target->data = imagecreatetruecolor($newwidth, $newheight);
+        $target->data = imagecreatetruecolor($new_width, $new_height);
 
         if ($source->mime_extension == ".gif" || $source->mime_extension == ".png") {
             imagealphablending($target->data, true);
@@ -201,7 +201,7 @@ class GDWrapper implements GDWrapperInterface
             imagefill($target->data, 0, 0, imagecolorallocatealpha($target->data, 0, 0, 0, 127));
         }
 
-        imagecopyresampled($target->data, $source->data, 0, 0, 0, 0, $newwidth, $newheight, $source->width, $source->height);
+        imagecopyresampled($target->data, $source->data, 0, 0, 0, 0, $new_width, $new_height, $source->width, $source->height);
 
         if ($source->mime_extension == ".gif" || $source->mime_extension == ".png") {
             imagealphablending($target->data, false);
@@ -229,10 +229,10 @@ class GDWrapper implements GDWrapperInterface
             return $source;
         }
 
-        $newheight = $maxheight;
-        $newwidth = ((float)$maxheight / (float)$source->height) * $source->width;
+        $new_height = $maxheight;
+        $new_width = ((float)$maxheight / (float)$source->height) * $source->width;
 
-        $target->data = imagecreatetruecolor($newwidth, $newheight);
+        $target->data = imagecreatetruecolor($new_width, $new_height);
 
         if ($source->mime_extension === ".gif" || $source->mime_extension === ".png") {
             imagealphablending($target->data, true);
@@ -240,7 +240,7 @@ class GDWrapper implements GDWrapperInterface
             imagefill($target->data, 0, 0, imagecolorallocatealpha($target->data, 0, 0, 0, 127));
         }
 
-        imagecopyresampled($target->data, $source->data, 0, 0, 0, 0, $newwidth, $newheight, $source->width, $source->height);
+        imagecopyresampled($target->data, $source->data, 0, 0, 0, 0, $new_width, $new_height, $source->width, $source->height);
 
         if ($source->mime_extension == ".gif" || $source->mime_extension == ".png") {
             imagealphablending($target->data, false);
@@ -435,7 +435,6 @@ class GDWrapper implements GDWrapperInterface
 
         if (!empty($fn_target)) {
             $target = new GDImageInfo($fn_target);
-            $target->data = $source->data;
         } else {
             $target = new GDImageInfo($fn_source);
         }
@@ -476,11 +475,9 @@ class GDWrapper implements GDWrapperInterface
         $degrees = 0;
         if ($roll_direction == "left") {
             $degrees = 90;
-        }
-        if ($roll_direction == "right") {
+        } elseif ($roll_direction == "right") {
             $degrees = 270;
-        }
-        if (is_numeric($roll_direction)) {
+        } elseif (is_numeric($roll_direction)) {
             $degrees = (int)$roll_direction;
         }
 
@@ -591,26 +588,26 @@ class GDWrapper implements GDWrapperInterface
         if ($width > $height) {
             // горизонтальная
             if ($maxwidth < $width) {
-                $newwidth = $maxwidth;
-                $newheight = ceil($height * $maxwidth / $width);
+                $new_width = $maxwidth;
+                $new_height = ceil($height * $maxwidth / $width);
             } else {
-                $newheight = $height;
-                $newwidth = $width;
+                $new_height = $height;
+                $new_width = $width;
             }
         } else {
             // вертикальная
             if ($maxheight < $height) {
-                $newheight = $maxheight;
-                $newwidth = ceil($width * $maxheight / $height);
+                $new_height = $maxheight;
+                $new_width = ceil($width * $maxheight / $height);
             } else {
-                $newheight = $height;
-                $newwidth = $width;
+                $new_height = $height;
+                $new_width = $width;
             }
         }
 
         return [
-            'width'     =>  $newwidth,
-            'height'    =>  $newheight
+            'width'     =>  $new_width,
+            'height'    =>  $new_height
         ];
     }
 

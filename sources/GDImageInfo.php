@@ -4,22 +4,22 @@ namespace AJUR\Wrappers;
 
 class GDImageInfo implements GDImageInfoInterface
 {
-    public $valid = false;
-    public $error_message = '';
+    public bool $valid = false;
+    public string $error_message = '';
 
-    public $width = 0;
-    public $height = 0;
-    public $type = 0;
-
-    /**
-     * @var string
-     */
-    public $mime = '';
+    public int $width = 0;
+    public int $height = 0;
+    public int $type = 0;
 
     /**
      * @var string
      */
-    public $mime_extension;
+    public string $mime = '';
+
+    /**
+     * @var string
+     */
+    public string $mime_extension;
 
     /**
      * @var string
@@ -70,7 +70,7 @@ class GDImageInfo implements GDImageInfoInterface
             $this->mime = image_type_to_mime_type($this->type);
             $this->mime_extension = image_type_to_extension($this->type);          // расширение на основе MIME-типа
         } else {
-            $this->setError("Can't get imagesize of file {$this->filename}");
+            $this->setError("Can't get image properties of file {$this->filename}");
         }
         return $this;
     }
