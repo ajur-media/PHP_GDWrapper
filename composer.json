@@ -14,8 +14,8 @@
         "platform-check": false
     },
     "require": {
-        "php": "^7.3|>=8",
-        "psr/log": "^1.1",
+        "php": "^7.4",
+        "psr/log": "*",
         "ext-gd": "*"
     },
     "autoload": {
@@ -29,5 +29,8 @@
     "support": {
         "source": "https://github.com/ajur-media/PHP_GDWrapper",
         "issues": "https://github.com/ajur-media/PHP_GDWrapper/issues"
+    },
+    "require-dev": {
+        "rector/rector": "^1.2"
     }
 }

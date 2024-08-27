@@ -54,6 +54,28 @@ class GDImageInfo implements GDImageInfoInterface
     }
 
     /**
+     * "Клонирует" GD-ресурс
+     *
+     * Дело в том, что простое присвоение `$target->data = $source->data;` не создает дубликат ресурса, а копирует ссылку
+     * на объект. И уничтожение одного объекта (например $source) уничтожает и второй.
+     *
+     * Клонировать GD-объект нельзя. В сети советуют делать это через imagecopy или imagecrop с сохранением альфаканала,
+     * но в нашем случае проще считать файл повторно, а потом поменять ему целевое имя (для сохранения).
+     *
+     * @param string $fn_source
+     * @param string $fn_target
+     * @return void
+     */
+    public static function clone(string $fn_source, string $fn_target):GDImageInfo
+    {
+        $target = new GDImageInfo($fn_source);
+        $target->load();
+        $target->setFilename($fn_target);
+
+        return $target;
+    }
+
+    /**
      * Обновляет информацию, используя данные файла
      */
     public function getFileInfo():GDImageInfo
@@ -142,7 +164,9 @@ class GDImageInfo implements GDImageInfoInterface
      */
     public function destroyImage():GDImageInfo
     {
-        if ($this->data !== null && get_resource_type($this->data) === 'gd') {
+        $data_type = get_resource_type($this->data);
+
+        if ($this->data !== null && ($data_type === 'gd' || $data_type =='resource')) {
             imagedestroy($this->data);
         }
 

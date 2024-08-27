@@ -60,12 +60,11 @@ class GDWrapper implements GDWrapperInterface
             : 0;
 
         self::$logger
-            = $logger instanceof LoggerInterface
+            = !is_null($logger)
             ? $logger
             : new NullLogger();
 
         self::$invalid_file = new GDImageInfo();
-
     }
 
     public static function cropImage(string $fn_source, string $fn_target, array $xy_source, array $wh_dest, array $wh_source, $quality = null):GDImageInfo
@@ -98,34 +97,29 @@ class GDWrapper implements GDWrapperInterface
         return $target;
     }
 
-    /**
-     * Создает новый файл, залитый цветом
-     *
-     * @param string $fn_target
-     * @param int $width
-     * @param int $height
-     * @param array $color массив из 4 int R+G+B+A; alpha (0 - opaque, 127 transparent), если указано меньше 4 значений, остальные считаются по умолчанию = 0
-     * @param null $quality
-     * @return GDImageInfo
-     */
+
     public static function imageFillColor(string $fn_target, int $width, int $height, array $color, $quality = null):GDImageInfo
     {
         $target = new GDImageInfo($fn_target);
 
         if (count($color) < 4) {
-            $color = array_merge( $color, array_fill(0, 3-count($color), 0)); // colors
+            $color = array_merge( $color, array_fill(0, 3 - count($color), 0)); // colors
             $color[] = 0; // alpha
         }
 
-        list($red, $green, $blue, $alpha) = $color;
+        [$red, $green, $blue, $alpha] = $color;
 
         if ($target->extension == 'png') {
             imagesavealpha($target->data, true);
         }
 
-        $color = $alpha == 0 ? imagecolorallocate($target->data, $red, $green, $blue) : imagecolorallocatealpha($target->data, $red, $green, $blue, $alpha);
-
         $target->data = imagecreatetruecolor($width, $height);
+
+        $color
+            = $alpha == 0
+            ? imagecolorallocate($target->data, $red, $green, $blue)
+            : imagecolorallocatealpha($target->data, $red, $green, $blue, $alpha);
+
         imagefill($target->data, 0, 0, $color);
 
         $target->setCompressionQuality($quality);
@@ -351,12 +345,13 @@ class GDWrapper implements GDWrapperInterface
 
     public static function addWaterMark(string $fn_source, array $params, int $pos_index, $quality = null, string $fn_target = ''):GDImageInfo
     {
-        $positions = array(
+        $positions = [
             1 => "left-top",
             2 => "right-top",
             3 => "right-bottom",
-            4 => "left-bottom",
-        );
+            4 => "left-bottom"
+        ];
+
         if (!array_key_exists( $pos_index, $positions )) {
             return new GDImageInfo();
         }
@@ -370,8 +365,7 @@ class GDWrapper implements GDWrapperInterface
         }
 
         if (!empty($fn_target)) {
-            $target = new GDImageInfo($fn_target);
-            $target->data = $source->data;
+            $target = GDImageInfo::clone($fn_source, $fn_target);
         } else {
             $target = $source;
         }
@@ -466,8 +460,7 @@ class GDWrapper implements GDWrapperInterface
         }
 
         if (!empty($fn_target)) {
-            $target = new GDImageInfo($fn_target);
-            $target->data = $source->data;
+            $target = GDImageInfo::clone($fn_source, $fn_target);
         } else {
             $target = new GDImageInfo($fn_source);
         }
@@ -491,62 +484,6 @@ class GDWrapper implements GDWrapperInterface
         $target->destroyImage();
         $source->destroyImage();
 
-        return $source;
-    }
-
-    public static function rotate_legacy(string $fn_source, string $roll_direction = "", $quality = null):GDImageInfo
-    {
-        $source = new GDImageInfo($fn_source);
-        $source->load();
-
-        if ($source->valid === false) {
-            self::$logger->error($source->error_message, [ $fn_source ]);
-            return $source;
-        }
-
-        $degrees = 0;
-        if ($roll_direction == "left") {
-            $degrees = 270;
-        }
-        if ($roll_direction == "right") {
-            $degrees = 90;
-        }
-
-        if ($degrees !== 0) {
-            $newimg = @imagecreatetruecolor($source->width, $source->height);
-
-            try {
-                for ($i = 0; $i < $source->width; $i++) {
-                    for ($j = 0; $j < $source->height; $j++) {
-                        $reference = imagecolorat($source->data, $i, $j);
-                        switch ($degrees) {
-                            case 90: {
-                                if (!@imagesetpixel($newimg, ($source->height - 1) - $j, $i, $reference)) {
-                                    throw new RuntimeException();
-                                }
-                                break;
-                            }
-                            case 180: {
-                                if (!@imagesetpixel($newimg, $source->width - $i, ($source->height - 1) - $j, $reference)) {
-                                    throw new RuntimeException();
-                                }
-                                break;
-                            }
-                            case 270: {
-                                if (!@imagesetpixel($newimg, $j, $source->width - $i - 1, $reference)) {
-                                    throw new RuntimeException();
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            } catch (RuntimeException $e) {
-            }
-            $source->data = $newimg;
-            $source->setCompressionQuality($quality);
-            $source->store();
-        }
         return $source;
     }
 
@@ -578,27 +515,27 @@ class GDWrapper implements GDWrapperInterface
     /**
      * @param $width
      * @param $height
-     * @param $maxwidth
-     * @param $maxheight
+     * @param $max_width
+     * @param $max_height
      * @return array
      */
-    private static function getNewSizes($width, $height, $maxwidth, $maxheight)
+    private static function getNewSizes($width, $height, $max_width, $max_height): array
     {
 
         if ($width > $height) {
             // горизонтальная
-            if ($maxwidth < $width) {
-                $new_width = $maxwidth;
-                $new_height = ceil($height * $maxwidth / $width);
+            if ($max_width < $width) {
+                $new_width = $max_width;
+                $new_height = ceil($height * $max_width / $width);
             } else {
                 $new_height = $height;
                 $new_width = $width;
             }
         } else {
             // вертикальная
-            if ($maxheight < $height) {
-                $new_height = $maxheight;
-                $new_width = ceil($width * $maxheight / $height);
+            if ($max_height < $height) {
+                $new_height = $max_height;
+                $new_width = ceil($width * $max_height / $height);
             } else {
                 $new_height = $height;
                 $new_width = $width;

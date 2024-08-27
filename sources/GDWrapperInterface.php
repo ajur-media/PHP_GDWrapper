@@ -135,6 +135,16 @@ interface GDWrapperInterface
      */
     public static function flip(string $fn_source, int $mode, $quality = null, string $fn_target = ''):GDImageInfo;
 
+    /**
+     * Создает новый файл, залитый цветом
+     *
+     * @param string $fn_target
+     * @param int $width
+     * @param int $height
+     * @param array $color массив из 4 int R+G+B+A; alpha (0 - opaque, 127 transparent), если указано меньше 4 значений, остальные считаются по умолчанию = 0
+     * @param null $quality
+     * @return GDImageInfo
+     */
     public static function imageFillColor(string $fn_target, int $width, int $height, array $color, $quality = null):GDImageInfo;
 
 }
