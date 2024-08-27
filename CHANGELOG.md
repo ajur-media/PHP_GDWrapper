@@ -1,6 +1,12 @@
+# 1.99.0
+
+- [R] PHP 7.4 & PHP 8.0 compatible version
+- [+] `applyImageFilter` method
+- [+] GDImageException class
+
 # 1.3.0
 
-- Latest PHP7.4 version. It will not work on PHP8, 'cause in PHP8 Image is `GdImage`, not an abstract `resource`.
+- Latest PHP7.4 version. It will not work on PHP8, 'cause in PHP8 Image is `GdImage`, not an abstract `resource` (fixed!)
 
 # 1.2.1
 

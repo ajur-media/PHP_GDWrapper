@@ -12,11 +12,13 @@ class GDImageInfo implements GDImageInfoInterface
     public int $type = 0;
 
     /**
+     * MimeType
      * @var string
      */
     public string $mime = '';
 
     /**
+     * Extension based in MimeType
      * @var string
      */
     public string $mime_extension;
@@ -24,12 +26,12 @@ class GDImageInfo implements GDImageInfoInterface
     /**
      * @var string
      */
-    public $filename;
+    public string $filename;
 
     /**
      * @var string
      */
-    public $extension = '';
+    public string $extension = '';
 
     /**
      * Целевая степень сжатия
@@ -64,7 +66,7 @@ class GDImageInfo implements GDImageInfoInterface
      *
      * @param string $fn_source
      * @param string $fn_target
-     * @return void
+     * @return GDImageInfo
      */
     public static function clone(string $fn_source, string $fn_target):GDImageInfo
     {
@@ -88,7 +90,6 @@ class GDImageInfo implements GDImageInfoInterface
             $this->width = $image_info[0];
             $this->height = $image_info[1];
             $this->type = $image_info[2];
-            // $this->attr = $image_info[3];
             $this->mime = image_type_to_mime_type($this->type);
             $this->mime_extension = image_type_to_extension($this->type);          // расширение на основе MIME-типа
         } else {
@@ -164,11 +165,25 @@ class GDImageInfo implements GDImageInfoInterface
      */
     public function destroyImage():GDImageInfo
     {
-        $data_type = get_resource_type($this->data);
-
-        if ($this->data !== null && ($data_type === 'gd' || $data_type =='resource')) {
-            imagedestroy($this->data);
+        if (
+            (PHP_VERSION_ID >= 80000 && !$this->data instanceof \GdImage)
+            ||
+            (PHP_VERSION_ID < 80000 && get_resource_type($this->data) != 'gd')
+        ) {
+            throw new GDImageException("Not a GdImage resource: ", 0, [
+                'type'      =>  $this->type,
+                'filename'  =>  $this->filename,
+                'extension' =>  $this->extension,
+                'mime'      =>  $this->mime,
+                'mime_extension'    =>  $this->mime_extension,
+                'width'     =>  $this->width,
+                'height'    =>  $this->height,
+                'quality'   =>  $this->quality,
+                'data'      =>  $this->data
+            ]);
         }
+
+        imagedestroy($this->data);
 
         $this->data = null;
 
@@ -206,13 +221,16 @@ class GDImageInfo implements GDImageInfoInterface
     public function setCompressionQuality($image_quality = null):GDImageInfo
     {
         switch ($this->extension) {
-            case 'jpg':
+            case 'jpg': {
+                $this->quality = $image_quality ? GDWrapper::toRange($image_quality, 1, 100) : GDWrapper::$default_jpeg_quality;
+                break;
+            }
             case 'webp': {
-                $this->quality = GDWrapper::toRange($image_quality, 1, 100);
+                $this->quality = $image_quality ? GDWrapper::toRange($image_quality, 1, 100) : GDWrapper::$default_webp_quality;
                 break;
             }
             case 'png': {
-                $this->quality = GDWrapper::toRangeMin($image_quality, 0, 9);
+                $this->quality = $image_quality ? GDWrapper::toRange($image_quality, 1, 10) : GDWrapper::$default_png_quality;
                 break;
             }
             default: {
@@ -220,7 +238,7 @@ class GDImageInfo implements GDImageInfoInterface
             }
         }
 
-        $this->quality = $image_quality;
+        // $this->quality = $image_quality;
         return $this;
     }
 

@@ -14,7 +14,7 @@
         "platform-check": false
     },
     "require": {
-        "php": "^7.4",
+        "php": "7.4 | 8.*",
         "psr/log": "*",
         "ext-gd": "*"
     },

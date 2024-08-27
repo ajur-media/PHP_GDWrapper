@@ -109,11 +109,11 @@ class GDWrapper implements GDWrapperInterface
 
         [$red, $green, $blue, $alpha] = $color;
 
+        $target->data = imagecreatetruecolor($width, $height);
+
         if ($target->extension == 'png') {
             imagesavealpha($target->data, true);
         }
-
-        $target->data = imagecreatetruecolor($width, $height);
 
         $color
             = $alpha == 0
@@ -483,6 +483,16 @@ class GDWrapper implements GDWrapperInterface
 
         $target->destroyImage();
         $source->destroyImage();
+
+        return $source;
+    }
+
+    public static function applyImageFilter(string $fn_source, int $filter, ...$args):GDImageInfo
+    {
+        $source = new GDImageInfo($fn_source);
+        $source->load();
+
+        imagefilter($source->data, $filter, $args);
 
         return $source;
     }
