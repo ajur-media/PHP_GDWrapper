@@ -14,9 +14,11 @@
         "platform-check": false
     },
     "require": {
-        "php": "7.4 | 8.*",
+        "php": "^7.4 | 8.*",
         "psr/log": "*",
-        "ext-gd": "*"
+        "ext-gd": "*",
+        "ext-ffi": "*",
+        "aplus/image": "^3.0"
     },
     "autoload": {
         "psr-4": {
