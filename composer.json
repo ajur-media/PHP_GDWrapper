@@ -17,8 +17,7 @@
         "php": "^7.4 | 8.*",
         "psr/log": "*",
         "ext-gd": "*",
-        "ext-ffi": "*",
-        "aplus/image": "^3.0"
+        "ext-ffi": "*"
     },
     "autoload": {
         "psr-4": {
