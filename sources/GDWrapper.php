@@ -412,7 +412,10 @@ class GDWrapper implements GDWrapperInterface
         $target->store();
 
         $target->destroyImage();
-        $source->destroyImage();
+
+        if ($source->data) {
+            $source->destroyImage();
+        }
 
         return $target;
     }
@@ -439,7 +442,10 @@ class GDWrapper implements GDWrapperInterface
         $target->store();
 
         $target->destroyImage();
-        $source->destroyImage();
+
+        if ($source->data) {
+            $source->destroyImage();
+        }
 
         return $target;
     }
@@ -482,7 +488,9 @@ class GDWrapper implements GDWrapperInterface
         $target->store();
 
         $target->destroyImage();
-        $source->destroyImage();
+        if ($source->data) {
+            $source->destroyImage();
+        }
 
         return $source;
     }
